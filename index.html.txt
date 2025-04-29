@@ -41,7 +41,7 @@
 
     // Step 3: Create GeoJSON Layer with Labels
     const plotBoundary = new GeoJSONLayer({
-      url: "https://raw.githubusercontent.com/sgligis/riico-maps/main/Plot%20Boundary.geojson",
+      url: "https://raw.githubusercontent.com/sgligis/riico-maps/refs/heads/main/PlotBoundary.geojson",
       popupTemplate: {
         title: "Plot Details",
         content: "Plot ID: {PLOT_NUMBE}<br>Area: {RIICO_PLOT} sq m"
