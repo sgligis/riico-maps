@@ -23,25 +23,24 @@
     "esri/Map",
     "esri/views/MapView",
     "esri/layers/GeoJSONLayer",
-    "esri/geometry/Extent"
-  ], function(Map, MapView, GeoJSONLayer, Extent) {
+    "esri/geometry/Extent",
+    "esri/widgets/LayerList"
+  ], function(Map, MapView, GeoJSONLayer, Extent, LayerList) {
 
-    // Step 1: Create Map
     const map = new Map({
       basemap: "hybrid"
     });
 
-    // Step 2: Create View with initial center on Jaipur
     const view = new MapView({
       container: "viewDiv",
       map: map,
-      center: [75.7873, 26.9124], // Jaipur area
+      center: [75.7873, 26.9124],
       zoom: 15
     });
 
-    // Step 3: Create GeoJSON Layer with Labels
-    const PlotBoundary = new GeoJSONLayer({
-      url: "https://raw.githubusercontent.com/sgligis/riico-maps/refs/heads/main/PlotBoundary.geojson",
+    // Using jsDelivr CDN URL (recommended)
+    const plotBoundary = new GeoJSONLayer({
+      url: "https://cdn.jsdelivr.net/gh/sgligis/riico-maps@main/PlotBoundary.geojson",
       popupTemplate: {
         title: "Plot Details",
         content: "Plot ID: {PLOT_NUMBE}<br>Area: {RIICO_PLOT} sq m"
@@ -50,7 +49,7 @@
         type: "simple",
         symbol: {
           type: "simple-fill",
-          color: [0, 255, 0, 0.5], // Green semi-transparent
+          color: [0, 255, 0, 0.5],
           outline: {
             color: [0, 0, 0],
             width: 1
@@ -71,31 +70,21 @@
             weight: "bold"
           }
         },
-        labelPlacement: "center-center",
-        visualVariables: [{
-          type: "size",
-          valueExpression: "$view.scale",
-          stops: [
-            { value: 100000, size: 6 },
-            { value: 50000, size: 10 },
-            { value: 20000, size: 14 },
-            { value: 10000, size: 18 }
-          ]
-        }]
-      }],
-      labelsVisible: true
+        labelPlacement: "center-center"
+      }]
     });
 
-    // Step 4: Add Layer to Map
-    map.add(PlotBoundary);
+    map.add(plotBoundary);
 
-    // Step 5: Zoom to the specific extent of your plots
-    // First wait for the layer to load
-    PlotBoundary.when(() => {
-      // Get the extent of the layer
-      const layerExtent = PlotBoundary.fullExtent;
-      
-      // Create a slightly larger extent to ensure all features are visible
+    // Add layer list widget for debugging
+    const layerList = new LayerList({
+      view: view
+    });
+    view.ui.add(layerList, "top-right");
+
+    // Error handling
+    plotBoundary.when(() => {
+      const layerExtent = plotBoundary.fullExtent;
       const expandedExtent = new Extent({
         xmin: layerExtent.xmin - 0.01,
         ymin: layerExtent.ymin - 0.01,
@@ -103,14 +92,12 @@
         ymax: layerExtent.ymax + 0.01,
         spatialReference: layerExtent.spatialReference
       });
-      
-      // Zoom to this extent
-      view.goTo(expandedExtent).catch((error) => {
-        console.warn("Could not zoom to full extent:", error);
-      });
+      view.goTo(expandedExtent);
+    }, (error) => {
+      console.error("Failed to load plot data:", error);
+      alert("Error loading plot data. Check console for details.");
     });
   });
 </script>
-
 </body>
 </html>
