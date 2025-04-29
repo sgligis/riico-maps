@@ -24,8 +24,9 @@
     "esri/views/MapView",
     "esri/layers/GeoJSONLayer",
     "esri/geometry/Extent",
-    "esri/widgets/LayerList"
-  ], function(Map, MapView, GeoJSONLayer, Extent, LayerList) {
+    "esri/widgets/LayerList",
+    "esri/tasks/support/Query"
+  ], function(Map, MapView, GeoJSONLayer, Extent, LayerList, Query) {
 
     const map = new Map({
       basemap: "hybrid"
@@ -34,11 +35,11 @@
     const view = new MapView({
       container: "viewDiv",
       map: map,
-      center: [75.7873, 26.9124],
+      center: [75.7873, 26.9124], // Default Jaipur coordinates
       zoom: 15
     });
 
-    // Using jsDelivr CDN URL (recommended)
+    // Using jsDelivr CDN URL
     const plotBoundary = new GeoJSONLayer({
       url: "https://cdn.jsdelivr.net/gh/sgligis/riico-maps@main/PlotBoundary.geojson",
       popupTemplate: {
@@ -82,19 +83,48 @@
     });
     view.ui.add(layerList, "top-right");
 
-    // Error handling
+    // Improved zoom handling
     plotBoundary.when(() => {
-      const layerExtent = plotBoundary.fullExtent;
-      const expandedExtent = new Extent({
-        xmin: layerExtent.xmin - 0.01,
-        ymin: layerExtent.ymin - 0.01,
-        xmax: layerExtent.xmax + 0.01,
-        ymax: layerExtent.ymax + 0.01,
-        spatialReference: layerExtent.spatialReference
+      // Create a query to get the actual extent of features
+      const query = new Query();
+      query.where = "1=1"; // Get all features
+      query.returnGeometry = true;
+      
+      plotBoundary.queryExtent(query).then((results) => {
+        if (results.extent) {
+          // Add 10% padding around the features
+          const paddingFactor = 0.1;
+          const width = results.extent.xmax - results.extent.xmin;
+          const height = results.extent.ymax - results.extent.ymin;
+          
+          const paddedExtent = new Extent({
+            xmin: results.extent.xmin - (width * paddingFactor),
+            ymin: results.extent.ymin - (height * paddingFactor),
+            xmax: results.extent.xmax + (width * paddingFactor),
+            ymax: results.extent.ymax + (height * paddingFactor),
+            spatialReference: results.extent.spatialReference
+          });
+          
+          view.goTo(paddedExtent, {
+            duration: 2000  // 2 second animation
+          }).catch(() => {
+            // Fallback to hardcoded extent if needed
+            view.goTo({
+              center: [75.7873, 26.9124],
+              zoom: 16
+            });
+          });
+        }
+      }).catch((error) => {
+        console.error("Query extent failed:", error);
+        // Fallback to hardcoded extent
+        view.goTo({
+          center: [75.7873, 26.9124],
+          zoom: 16
+        });
       });
-      view.goTo(expandedExtent);
     }, (error) => {
-      console.error("Failed to load plot data:", error);
+      console.error("Layer failed to load:", error);
       alert("Error loading plot data. Check console for details.");
     });
   });
