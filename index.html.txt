@@ -40,7 +40,7 @@
     });
 
     // Step 3: Create GeoJSON Layer with Labels
-    const plotBoundary = new GeoJSONLayer({
+    const PlotBoundary = new GeoJSONLayer({
       url: "https://raw.githubusercontent.com/sgligis/riico-maps/refs/heads/main/PlotBoundary.geojson",
       popupTemplate: {
         title: "Plot Details",
@@ -87,13 +87,13 @@
     });
 
     // Step 4: Add Layer to Map
-    map.add(plotBoundary);
+    map.add(PlotBoundary);
 
     // Step 5: Zoom to the specific extent of your plots
     // First wait for the layer to load
-    plotBoundary.when(() => {
+    PlotBoundary.when(() => {
       // Get the extent of the layer
-      const layerExtent = plotBoundary.fullExtent;
+      const layerExtent = PlotBoundary.fullExtent;
       
       // Create a slightly larger extent to ensure all features are visible
       const expandedExtent = new Extent({
